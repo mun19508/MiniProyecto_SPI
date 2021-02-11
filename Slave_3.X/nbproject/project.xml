@@ -6,12 +6,12 @@
             <name>Slave_3</name>
             <creation-uuid>62bcc4a7-efb5-4df5-adff-63631e76d425</creation-uuid>
             <make-project-type>0</make-project-type>
-            <c-extensions/>
+            <c-extensions>c</c-extensions>
             <cpp-extensions/>
-            <header-extensions/>
+            <header-extensions>h</header-extensions>
             <asminc-extensions/>
-            <make-dep-projects/>
             <sourceEncoding>ISO-8859-1</sourceEncoding>
+            <make-dep-projects/>
         </data>
     </configuration>
 </project>
