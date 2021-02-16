@@ -50,20 +50,20 @@ void main(void) {
     //--------------------------Loop principal----------------------------------
     while (1) {
         if (PIR1bits.ADIF == 1) {
-            volLM35 = (ADRESH << 2 | ADRESL >> 6); //se guarda el byte más significativo en la variable
-            ADCON0bits.GO = 1;
+            volLM35 = (ADRESH << 2 | ADRESL >> 6); //se guarda el valor del ADC en la variable
             PIR1bits.ADIF = 0;
-        }//Falta convertir a char y mandar al master.
-        tempLM35 = (volLM35 / (float) 1023)*500; //
-        if (tempLM35 < 25) {
+            ADCON0bits.GO = 1;
+        }
+        tempLM35 = (volLM35 / (float) 1023)*500; //La operacion corresponde (volLeido*Vcc*100°C/mV)/resoluciondelADC 
+        if (tempLM35 < 25) { //si el resultado de la operacion es menor a 25°C
+            PORTD = 0; //se asegura que unicamente este prendido el LED requerido
+            green = 1; //se enciende el LED verde
+        } else if (tempLM35 < 36) { //si mayor a 25°C y menor a 36°C
             PORTD = 0;
-            green = 1;
-        } else if (tempLM35 < 36) {
+            yellow = 1; //se enciende el LED amarillo
+        } else { //en caso sea mayor a 36°C
             PORTD = 0;
-            yellow = 1;
-        } else {
-            PORTD = 0;
-            red = 1;
+            red = 1; //se enciende el LED de color rojo
         }
     }
 }
