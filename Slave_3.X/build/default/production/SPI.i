@@ -1,4 +1,4 @@
-# 1 "main.c"
+# 1 "SPI.c"
 # 1 "<built-in>" 1
 # 1 "<built-in>" 3
 # 288 "<built-in>" 3
@@ -6,13 +6,10 @@
 # 1 "<built-in>" 2
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\language_support.h" 1 3
 # 2 "<built-in>" 2
-# 1 "main.c" 2
-
-
-
-
-
-
+# 1 "SPI.c" 2
+# 10 "SPI.c"
+# 1 "./SPI.h" 1
+# 15 "./SPI.h"
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\xc.h" 1 3
 # 18 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\xc.h" 3
 extern const char __xc8_OPTIM_SPEED;
@@ -2635,23 +2632,9 @@ extern __bank0 unsigned char __resetbits;
 extern __bank0 __bit __powerdown;
 extern __bank0 __bit __timeout;
 # 28 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\xc.h" 2 3
-# 7 "main.c" 2
+# 15 "./SPI.h" 2
 
-# 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdint.h" 1 3
-# 8 "main.c" 2
 
-# 1 "./ADC_LIB.h" 1
-# 10 "./ADC_LIB.h"
-# 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdint.h" 1 3
-# 10 "./ADC_LIB.h" 2
-
-void start_adc(uint8_t frec, uint8_t isr, uint8_t Vref, uint8_t justRL);
-void Select_ch(uint8_t channel);
-void start_ch(uint8_t channel);
-# 9 "main.c" 2
-
-# 1 "./SPI.h" 1
-# 17 "./SPI.h"
 typedef enum
 {
     SPI_MASTER_OSC_DIV4 = 0b00100000,
@@ -2685,80 +2668,46 @@ void spiInit(Spi_Type, Spi_Data_Sample, Spi_Clock_Idle, Spi_Transmit_Edge);
 void spiWrite(char);
 unsigned spiDataReady();
 char spiRead();
-# 10 "main.c" 2
+# 10 "SPI.c" 2
 
 
-
-
-
-#pragma config FOSC = INTRC_NOCLKOUT
-#pragma config WDTE = OFF
-#pragma config PWRTE = OFF
-#pragma config MCLRE = OFF
-#pragma config CP = OFF
-#pragma config CPD = OFF
-#pragma config BOREN = OFF
-#pragma config IESO = OFF
-#pragma config FCMEN = OFF
-#pragma config LVP = OFF
-
-#pragma config BOR4V = BOR40V
-#pragma config WRT = OFF
-
-
-volatile int voltageLM35 = 0;
-float temperature = 0.00;
-
-
-
-
-
-void __attribute__((picinterrupt(("")))) isr(void) {
-    if (PIR1bits.ADIF == 1) {
-        voltageLM35 = (ADRESH << 2 | ADRESL >> 6);
-        PIR1bits.ADIF = 0;
-        _delay((unsigned long)((50)*(4000000/4000000.0)));
-        ADCON0bits.GO = 1;
+void spiInit(Spi_Type sType, Spi_Data_Sample sDataSample, Spi_Clock_Idle sClockIdle, Spi_Transmit_Edge sTransmitEdge)
+{
+    TRISC5 = 0;
+    if(sType & 0b00000100)
+    {
+        SSPSTAT = sTransmitEdge;
+        TRISC3 = 1;
     }
-    if (SSPIF == 1) {
-        spiWrite(temperature);
-        SSPIF = 0;
+    else
+    {
+        SSPSTAT = sDataSample | sTransmitEdge;
+        TRISC3 = 0;
     }
+
+    SSPCON = sType | sClockIdle;
 }
 
+static void spiReceiveWait()
+{
+    while ( !SSPSTATbits.BF );
+}
 
-void main(void) {
+void spiWrite(char dat)
+{
+    SSPBUF = dat;
+}
 
-    ANSEL = 0;
-    ANSELH = 0;
-    start_adc(2, 1, 0, 0);
-    start_ch(12);
-    Select_ch(12);
+unsigned spiDataReady()
+{
+    if(SSPSTATbits.BF)
+        return 1;
+    else
+        return 0;
+}
 
-    INTCONbits.GIE = 1;
-    INTCONbits.PEIE = 1;
-    PIR1bits.SSPIF = 0;
-    PIE1bits.SSPIE = 1;
-    TRISAbits.TRISA5 = 1;
-    spiInit(SPI_SLAVE_SS_EN, SPI_DATA_SAMPLE_MIDDLE, SPI_CLOCK_IDLE_LOW, SPI_IDLE_2_ACTIVE);
-
-    TRISD = 0;
-    TRISB = 1;
-
-    PORTB = 0;
-    PORTD = 0;
-    while (1) {
-        temperature = (voltageLM35 * 0.4888);
-
-        if (temperature < 25) {
-            PORTD = 0;
-            PORTDbits.RD0 = 1;
-        } else if (temperature < 36) {
-            PORTD = 0;
-            PORTDbits.RD1 = 1;
-        } else {
-            PORTD = 0;
-            PORTDbits.RD2 = 1;
-        }
-    }
+char spiRead()
+{
+    spiReceiveWait();
+    return(SSPBUF);
 }
