@@ -4,6 +4,7 @@
  *Descripcion: Se definen la operaciones a realizar por las funciones previamente
  *             definidas en el archivo ADC_LIB.h
  */
+#include <xc.h>
 #include "ADC_LIB.h"
 #define _XTAL_FREQ 4000000
 
@@ -202,6 +203,6 @@ void Select_ch(uint8_t channel) {// se selecciona el canal analogico y se inicia
             ADCON0bits.CHS3 = 1;
             break;
     }
-    __delay_us(5); //es el tiempo recomendado de espera por cada cambio de canal
+    __delay_us(50); //es el tiempo recomendado de espera por cada cambio de canal
     ADCON0bits.GO = 1;
 }
