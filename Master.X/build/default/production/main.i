@@ -1,4 +1,4 @@
-# 1 "LCD.c"
+# 1 "main.c"
 # 1 "<built-in>" 1
 # 1 "<built-in>" 3
 # 288 "<built-in>" 3
@@ -6,7 +6,8 @@
 # 1 "<built-in>" 2
 # 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\language_support.h" 1 3
 # 2 "<built-in>" 2
-# 1 "LCD.c" 2
+# 1 "main.c" 2
+
 
 
 
@@ -2635,7 +2636,10 @@ extern __bank0 unsigned char __resetbits;
 extern __bank0 __bit __powerdown;
 extern __bank0 __bit __timeout;
 # 28 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\xc.h" 2 3
-# 7 "LCD.c" 2
+# 8 "main.c" 2
+
+# 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdint.h" 1 3
+# 9 "main.c" 2
 
 # 1 "./LCD.h" 1
 # 14 "./LCD.h"
@@ -2653,126 +2657,215 @@ void Lcd_Shift_Right(void);
 void Lcd_Shift_Left(void);
 
 void convert(char *data,float a, int place);
-# 8 "LCD.c" 2
+# 10 "main.c" 2
+
+# 1 "./UART.h" 1
+# 15 "./UART.h"
+# 1 "C:\\Program Files\\Microchip\\xc8\\v2.31\\pic\\include\\c90\\stdint.h" 1 3
+# 15 "./UART.h" 2
+# 30 "./UART.h"
+void UARTInit(const uint32_t baud_rate, const uint8_t BRGH);
 
 
 
-void Lcd_Port(char a) {
-    PORTD = a;
-}
 
-void Lcd_Cmd(char a) {
-    PORTEbits.RE0 = 0;
-    Lcd_Port(a);
-    PORTEbits.RE1 = 1;
-    _delay((unsigned long)((4)*(4000000/4000.0)));
-    PORTEbits.RE1 = 0;
-}
 
-void Lcd_Clear() {
-    Lcd_Cmd(0);
-    Lcd_Cmd(1);
-}
+void UARTSendChar(const char c);
 
-void Lcd_Set_Cursor(char a, char b) {
-    char temp;
-    if (a == 1) {
-        temp = 0x80 + b - 1;
-        Lcd_Cmd(temp);
-    } else if (a == 2) {
-        temp = 0xC0 + b - 1;
-        Lcd_Cmd(temp);
-    }
-}
 
-void Lcd_Init() {
-    Lcd_Port(0x00);
-    _delay((unsigned long)((20)*(4000000/4000.0)));
-    Lcd_Cmd(0x30);
-    _delay((unsigned long)((5)*(4000000/4000.0)));
-    Lcd_Cmd(0x30);
-    _delay((unsigned long)((11)*(4000000/4000.0)));
-    Lcd_Cmd(0x30);
 
-    Lcd_Cmd(0x38);
-    Lcd_Cmd(0x0C);
-    Lcd_Cmd(0x6);
-}
 
-void Lcd_Write_Char(char a) {
-    PORTEbits.RE0 = 1;
-    Lcd_Port(a);
-    PORTEbits.RE1 = 1;
-    _delay((unsigned long)((40)*(4000000/4000000.0)));
-    PORTEbits.RE1 = 0;
-}
 
-void Lcd_Write_String(char *a) {
-    int i;
-    for (i = 0; a[i] != '\0'; i++)
-        Lcd_Write_Char(a[i]);
-}
 
-void Lcd_Shift_Right() {
-    Lcd_Cmd(0x01);
-    Lcd_Cmd(0x0C);
-}
+void UARTSendString(const char* str, const uint8_t max_length);
 
-void Lcd_Shift_Left() {
-    Lcd_Cmd(0x01);
-    Lcd_Cmd(0x08);
-}
 
-void convert(char *data, float a, int place)
+
+
+
+uint8_t UARTDataReady();
+
+
+
+
+
+char UARTReadChar();
+
+
+
+
+
+
+
+uint8_t UARTReadString(char *buf, uint8_t max_length);
+# 11 "main.c" 2
+
+# 1 "./SPI.h" 1
+# 17 "./SPI.h"
+typedef enum
 {
-    int temp = a;
-    float x = 0.0;
-    int digits = 0;
-    int i = 0, mu = 1;
-    int j = 0;
-    if (a < 0) {
-        a = a*-1;
-        data[i] = '-';
-        i++;
+    SPI_MASTER_OSC_DIV4 = 0b00100000,
+    SPI_MASTER_OSC_DIV16 = 0b00100001,
+    SPI_MASTER_OSC_DIV64 = 0b00100010,
+    SPI_MASTER_TMR2 = 0b00100011,
+    SPI_SLAVE_SS_EN = 0b00100100,
+    SPI_SLAVE_SS_DIS = 0b00100101
+}Spi_Type;
+
+typedef enum
+{
+    SPI_DATA_SAMPLE_MIDDLE = 0b00000000,
+    SPI_DATA_SAMPLE_END = 0b10000000
+}Spi_Data_Sample;
+
+typedef enum
+{
+    SPI_CLOCK_IDLE_HIGH = 0b00010000,
+    SPI_CLOCK_IDLE_LOW = 0b00000000
+}Spi_Clock_Idle;
+
+typedef enum
+{
+    SPI_IDLE_2_ACTIVE = 0b00000000,
+    SPI_ACTIVE_2_IDLE = 0b01000000
+}Spi_Transmit_Edge;
+
+
+void spiInit(Spi_Type, Spi_Data_Sample, Spi_Clock_Idle, Spi_Transmit_Edge);
+void spiWrite(char);
+unsigned spiDataReady();
+char spiRead();
+# 12 "main.c" 2
+# 22 "main.c"
+#pragma config FOSC = INTRC_NOCLKOUT
+#pragma config WDTE = OFF
+#pragma config PWRTE = OFF
+#pragma config MCLRE = OFF
+#pragma config CP = OFF
+#pragma config CPD = OFF
+#pragma config BOREN = OFF
+#pragma config IESO = OFF
+#pragma config FCMEN = OFF
+#pragma config LVP = OFF
+
+#pragma config BOR4V = BOR40V
+#pragma config WRT = OFF
+
+
+char int2String(uint8_t value);
+
+
+uint8_t voltageADC = 0;
+uint8_t cont8bits = 0;
+uint8_t temperature = 0;
+char string_voltageADC[5];
+char* string_cont8bits;
+char string_temperature[5];
+float conv_ADC = 0;
+
+void main(void) {
+
+    ANSEL = 0;
+    ANSELH = 0;
+
+    UARTInit(9600, 1);
+    TRISCbits.TRISC6 = 0;
+    TRISCbits.TRISC7 = 1;
+
+    TRISCbits.TRISC0 = 0;
+    TRISCbits.TRISC1 = 0;
+    TRISCbits.TRISC2 = 0;
+    PORTCbits.RC0 = 0;
+    PORTCbits.RC1 = 1;
+    PORTCbits.RC2 = 1;
+    spiInit(SPI_MASTER_OSC_DIV4, SPI_DATA_SAMPLE_MIDDLE, SPI_CLOCK_IDLE_LOW, SPI_IDLE_2_ACTIVE);
+
+    TRISB = 0;
+    TRISD = 0;
+    TRISE = 0;
+
+    PORTD = 0;
+    PORTE = 0;
+
+    Lcd_Init();
+    Lcd_Clear();
+
+    while (1) {
+        Lcd_Set_Cursor(1, 1);
+        Lcd_Write_String("S1:");
+        Lcd_Set_Cursor(1, 7);
+        Lcd_Write_String("S2:");
+        Lcd_Set_Cursor(1, 13);
+        Lcd_Write_String("S3:");
+
+        PORTCbits.RC2 = 1;
+        PORTCbits.RC0 = 0;
+        _delay((unsigned long)((1)*(4000000/4000.0)));
+        spiWrite(1);
+        voltageADC = spiRead();
+        _delay((unsigned long)((1)*(4000000/4000.0)));
+        PORTCbits.RC0 = 1;
+        PORTCbits.RC1 = 0;
+        _delay((unsigned long)((1)*(4000000/4000.0)));
+        spiWrite(2);
+        cont8bits = spiRead();
+        _delay((unsigned long)((1)*(4000000/4000.0)));
+        PORTCbits.RC1 = 1;
+        PORTCbits.RC2 = 0;
+        _delay((unsigned long)((1)*(4000000/4000.0)));
+        spiWrite(3);
+        temperature = spiRead();
+
+        conv_ADC = (voltageADC / (float) 255)*5;
+
+        convert(string_voltageADC, conv_ADC, 2);
+        Lcd_Set_Cursor(2, 1);
+        Lcd_Write_String(string_voltageADC);
+        Lcd_Set_Cursor(2, 5);
+        Lcd_Write_String("V");
+        UARTSendChar('|');
+        UARTSendString("S1", 6);
+        UARTSendChar(':');
+        UARTSendChar(' ');
+        UARTSendString(string_voltageADC, 5);
+        UARTSendChar('V');
+        UARTSendChar(',');
+        UARTSendChar(' ');
+
+        string_cont8bits = int2String(cont8bits);
+        Lcd_Set_Cursor(2, 7);
+        Lcd_Write_String(string_cont8bits);
+        UARTSendString("S2", 6);
+        UARTSendChar(':');
+        UARTSendChar(' ');
+        UARTSendString(string_cont8bits, 4);
+        UARTSendChar(',');
+        UARTSendChar(' ');
+
+        convert(string_temperature, temperature, 1);
+        Lcd_Set_Cursor(2, 12);
+        Lcd_Write_String(string_temperature);
+        Lcd_Set_Cursor(2, 16);
+        Lcd_Write_String("C");
+        _delay((unsigned long)((20)*(4000000/4000.0)));
+        UARTSendString("S3", 6);
+        UARTSendChar(':');
+        UARTSendChar(' ');
+        UARTSendString(string_temperature, 4);
+        UARTSendChar('C');
+        UARTSendChar('|');
+        UARTSendChar(' ');
     }
+}
+char int2String(uint8_t value) {
+    char cifras[4];
+    uint8_t x;
+    x = value / 100;
+    cifras[0] = x + 48;
+    value -= x * 100;
 
-    while (temp != 0) {
-        temp = temp / 10;
-        digits++;
-    }
-    while (digits != 0) {
-        if (digits == 1)mu = 1;
-        else for (j = 2; j <= digits; j++)mu = mu * 10;
-
-        x = a / mu;
-        a = a - ((int) x * mu);
-        data[i] = 0x30 + ((int) x);
-        i++;
-        digits--;
-        mu = 1;
-    }
-
-    data[i] = '.';
-    i++;
-    digits = 0;
-    for (j = 1; j <= place; j++)mu = mu * 10;
-    x = (a - (int) a) * mu;
-    a = x;
-    temp = a;
-    x = 0.0;
-    mu = 1;
-    digits = place;
-    while (digits != 0) {
-        if (digits == 1)mu = 1;
-        else for (j = 2; j <= digits; j++)mu = mu * 10;
-
-        x = a / mu;
-        a = a - ((int) x * mu);
-        data[i] = 0x30 + ((int) x);
-        i++;
-        digits--;
-        mu = 1;
-    }
-
-    data[i] = '\n';
+    cifras[1] = (value / 10) + 48;
+    cifras[2] = (value % 10) + 48;
+    cifras[3] = '\0';
+    return cifras;
 }

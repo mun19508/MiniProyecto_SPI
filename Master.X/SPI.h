@@ -12,7 +12,7 @@
 #ifndef __SPI_H
 #define	__SPI_H
 
-#include <xc.h> // include processor files - each processor file is guarded.  
+#include <xc.h> // include processor files - each processor file is guarded. 
 
 typedef enum 
 {
